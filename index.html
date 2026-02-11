@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Street XI Prototype</title>
+<style>
+  body { margin: 0; background: #0b6623; overflow: hidden; }
+  canvas { display: block; margin: auto; background: #1e8f3e; }
+</style>
+</head>
+<body>
+
+<canvas id="game" width="900" height="500"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let keys = {};
+let score = { player: 0, ai: 0 };
+
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+const player = {
+  x: 200, y: 250, r: 12, speed: 4
+};
+
+const ball = {
+  x: 230, y: 250, r: 8, vx: 0, vy: 0
+};
+
+const goalie = {
+  x: 860, y: 250, r: 15, speed: 2
+};
+
+function resetBall() {
+  ball.x = 230;
+  ball.y = 250;
+  ball.vx = 0;
+  ball.vy = 0;
+}
+
+function drawField() {
+  ctx.fillStyle = "#1e8f3e";
+  ctx.fillRect(0,0,900,500);
+
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(0,0,900,500);
+  ctx.beginPath();
+  ctx.moveTo(450,0);
+  ctx.lineTo(450,500);
+  ctx.stroke();
+
+  ctx.fillRect(880,180,20,140); // goal
+}
+
+function drawCircle(obj, color) {
+  ctx.beginPath();
+  ctx.arc(obj.x, obj.y, obj.r, 0, Math.PI*2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function updatePlayer() {
+  if (keys["w"]) player.y -= player.speed;
+  if (keys["s"]) player.y += player.speed;
+  if (keys["a"]) player.x -= player.speed;
+  if (keys["d"]) player.x += player.speed;
+}
+
+function kickBall() {
+  let dx = ball.x - player.x;
+  let dy = ball.y - player.y;
+  let dist = Math.hypot(dx, dy);
+  if (dist < player.r + ball.r + 5 && keys[" "]) {
+    ball.vx = dx * 0.6;
+    ball.vy = dy * 0.6;
+  }
+}
+
+function updateBall() {
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+  ball.vx *= 0.98;
+  ball.vy *= 0.98;
+
+  if (ball.y < 0 || ball.y > 500) ball.vy *= -1;
+
+  // Goal check
+  if (ball.x > 880 && ball.y > 180 && ball.y < 320) {
+    score.player++;
+    resetBall();
+  }
+}
+
+function updateGoalie() {
+  if (ball.y < goalie.y) goalie.y -= goalie.speed;
+  if (ball.y > goalie.y) goalie.y += goalie.speed;
+
+  let dx = ball.x - goalie.x;
+  let dy = ball.y - goalie.y;
+  let dist = Math.hypot(dx, dy);
+  if (dist < goalie.r + ball.r) {
+    ball.vx *= -1;
+  }
+}
+
+function drawScore() {
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText(`YOU ${score.player}`, 20, 30);
+}
+
+function gameLoop() {
+  drawField();
+  updatePlayer();
+  kickBall();
+  updateBall();
+  updateGoalie();
+
+  drawCircle(player, "blue");
+  drawCircle(ball, "white");
+  drawCircle(goalie, "red");
+
+  drawScore();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
